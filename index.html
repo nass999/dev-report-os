@@ -1,0 +1,2190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dev.Report OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root {
+    --bg: #FAF9F6;
+    --surface: #FFFFFF;
+    --border: #E5E5E5;
+    --border-soft: #F1F1F1;
+    --accent: #3B82F6;
+    --accent-dark: #2563EB;
+    --strong: #10B981;
+    --medium: #F59E0B;
+    --weak: #EF4444;
+    --text: #18181B;
+    --text-muted: #71717A;
+    --text-soft: #A1A1AA;
+    --tracked: #FFFAE5;
+    --hover: #FAFAFA;
+    --chip: #F4F4F5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-feature-settings: "tnum"; }
+  button { font-family: inherit; }
+
+  /* ===== Topbar ===== */
+  .topbar {
+    height: 48px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+  .brand {
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 2px;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+  .brand .version {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-soft);
+    padding: 2px 5px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    margin-left: 6px;
+  }
+  .tabs { display: flex; gap: 2px; margin-left: 8px; }
+  .tab {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    transition: all 0.1s ease;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .tab i { font-size: 11px; }
+  .tab:hover { background: var(--chip); color: var(--text); }
+  .tab.active { background: #18181B; color: white; }
+  .tab .count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.15);
+  }
+  .tab:not(.active) .count { background: var(--chip); color: var(--text-muted); }
+  .topbar-right {
+    margin-left: auto;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+  .topbar-right .stamp { font-family: 'JetBrains Mono', monospace; }
+  .topbar-right .live {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .topbar-right .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--strong);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ===== Filter bar ===== */
+  .filter-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .filter-bar.hidden { display: none; }
+  .filter-group { position: relative; }
+  .filter-group i.field-icon {
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-soft);
+    font-size: 10px;
+    pointer-events: none;
+  }
+  .filter-input {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 6px;
+    padding: 6px 10px 6px 28px;
+    font-size: 12px;
+    font-family: inherit;
+    width: 220px;
+    color: var(--text);
+    transition: all 0.1s;
+  }
+  .filter-input::placeholder { color: var(--text-soft); }
+  .filter-input:focus,
+  .multi-select:focus-within {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.08);
+  }
+  .multi-select {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 6px;
+    padding: 6px 28px 6px 28px;
+    font-size: 12px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    min-width: 160px;
+    color: var(--text);
+  }
+  .multi-select .chev {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 9px;
+    color: var(--text-soft);
+  }
+  .multi-select-label-key { color: var(--text-muted); margin-right: 4px; }
+
+  .scrape-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.1s;
+    box-shadow: 0 1px 2px rgba(59,130,246,0.2);
+  }
+  .scrape-btn:hover { background: var(--accent-dark); }
+  .scrape-btn:active { transform: translateY(1px); }
+  .scrape-btn .spinning { animation: spin 0.9s linear infinite; }
+  @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+  /* ===== Page header ===== */
+  .header-block {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-block h1 {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header-block .sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-weight: 400;
+  }
+  .header-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 14px;
+  }
+  .header-meta .k { color: var(--text-soft); }
+
+  /* ===== Tables ===== */
+  .table-wrap {
+    background: var(--surface);
+    overflow: auto;
+    border-bottom: 1px solid var(--border);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  thead th {
+    position: sticky;
+    top: 0;
+    background: #FAFAFA;
+    z-index: 5;
+    text-align: left;
+    padding: 9px 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  thead th.num { text-align: right; }
+  tbody td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: middle;
+  }
+  tbody td.num { text-align: right; font-family: 'JetBrains Mono', monospace; }
+  tbody tr { transition: background 0.05s; }
+  tbody tr:hover { background: var(--hover); }
+  tbody tr.tracked { background: var(--tracked); }
+  tbody tr.tracked:hover { background: #FFF6D0; }
+
+  .event-name { font-weight: 600; color: var(--text); }
+  .event-cell { display: flex; flex-direction: column; gap: 2px; }
+  .event-cell .meta { color: var(--text-soft); font-size: 10.5px; font-family: 'JetBrains Mono', monospace; }
+
+  .tech-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 6px;
+    background: var(--chip);
+    border-radius: 4px;
+    color: #52525B;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .reach-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--chip);
+    color: #52525B;
+    font-weight: 500;
+  }
+  .reach-pill.virtual { background: #EFF6FF; color: #1D4ED8; }
+  .reach-pill.physical { background: #F0FDF4; color: #15803D; }
+  .reach-pill i { font-size: 9px; }
+
+  .icon-btn {
+    border: none;
+    background: transparent;
+    padding: 5px 6px;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  .icon-btn:hover { background: var(--chip); color: var(--text); }
+  .icon-btn.accent:hover { color: var(--accent); }
+
+  a.source-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  a.source-link:hover { text-decoration: underline; }
+
+  .row-actions { display: flex; gap: 2px; align-items: center; }
+
+  .checkbox {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1.5px solid #D4D4D8;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-block;
+    position: relative;
+    vertical-align: middle;
+    background: white;
+    transition: all 0.1s;
+  }
+  .checkbox:hover { border-color: var(--accent); }
+  .checkbox:checked { background: var(--accent); border-color: var(--accent); }
+  .checkbox:checked::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 0px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  /* Outcome dots */
+  .outcome-group { display: inline-flex; gap: 5px; align-items: center; }
+  .outcome-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #FAFAFA;
+    border: 1.5px solid #E5E5E5;
+    cursor: pointer;
+    transition: all 0.1s;
+    padding: 0;
+  }
+  .outcome-dot:hover { transform: scale(1.15); }
+  .outcome-dot.active.strong { background: var(--strong); border-color: var(--strong); box-shadow: 0 0 0 2px rgba(16,185,129,0.15); }
+  .outcome-dot.active.medium { background: var(--medium); border-color: var(--medium); box-shadow: 0 0 0 2px rgba(245,158,11,0.15); }
+  .outcome-dot.active.weak { background: var(--weak); border-color: var(--weak); box-shadow: 0 0 0 2px rgba(239,68,68,0.15); }
+
+  .inline-input {
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 4px 6px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text);
+    width: 100%;
+    border-radius: 4px;
+    transition: all 0.1s;
+  }
+  .inline-input:hover { background: var(--hover); }
+  .inline-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.08);
+  }
+  .inline-input.mono { font-family: 'JetBrains Mono', monospace; }
+  .inline-input.numeric { width: 90px; text-align: right; }
+  .inline-input.notes { min-width: 220px; }
+
+  .spend-cell { display: inline-flex; align-items: center; gap: 2px; font-family: 'JetBrains Mono', monospace; }
+  .spend-cell .currency { color: var(--text-soft); font-size: 10.5px; }
+
+  /* ===== Aggregates ===== */
+  .cards-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 16px 20px 8px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    margin-top: 6px;
+    letter-spacing: -0.02em;
+  }
+  .card .value .currency { color: var(--text-soft); font-size: 14px; font-weight: 500; margin-right: 2px; }
+  .card .trend {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .card .trend.up { color: var(--strong); }
+  .card .trend.down { color: var(--weak); }
+  .card .spark {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 90px;
+    height: 36px;
+    opacity: 0.5;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin: 8px 20px 16px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .panel-head {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    background: #FAFAFA;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .panel-head h2 {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .panel-head .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-soft);
+  }
+
+  /* Stacked bar (outcome distribution) */
+  .stacked-bar {
+    display: inline-flex;
+    height: 8px;
+    border-radius: 3px;
+    overflow: hidden;
+    min-width: 110px;
+    background: #F4F4F5;
+  }
+  .stacked-bar span { display: block; height: 100%; }
+  .stacked-bar .s-strong { background: var(--strong); }
+  .stacked-bar .s-medium { background: var(--medium); }
+  .stacked-bar .s-weak { background: var(--weak); }
+  .stacked-cell { display: flex; align-items: center; gap: 9px; }
+  .stacked-legend { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+
+  /* ===== Reporting drawer ===== */
+  .drawer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+    z-index: 20;
+  }
+  .drawer-toggle {
+    width: 100%;
+    background: var(--surface);
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .drawer-toggle i.chev { transition: transform 0.15s; font-size: 10px; color: var(--text-muted); }
+  .drawer.open .drawer-toggle i.chev { transform: rotate(180deg); }
+  .drawer-toggle .hint {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .drawer-toggle .hint .stat {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .drawer-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.2s ease;
+  }
+  .drawer.open .drawer-content { max-height: 200px; }
+  .drawer-content-inner {
+    padding: 14px 20px 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .drawer-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text);
+    transition: all 0.1s;
+  }
+  .drawer-btn:hover { background: var(--hover); border-color: #D4D4D8; }
+  .drawer-btn.primary { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 1px 2px rgba(59,130,246,0.2); }
+  .drawer-btn.primary:hover { background: var(--accent-dark); }
+  .drawer-divider { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    background: #18181B;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s;
+    pointer-events: none;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast i { color: var(--strong); }
+
+  /* ===== Dropdown ===== */
+  .dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    padding: 6px;
+    z-index: 40;
+    min-width: 180px;
+    display: none;
+  }
+  .dropdown-menu.open { display: block; }
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    user-select: none;
+  }
+  .dropdown-item:hover { background: var(--hover); }
+  .dropdown-item input[type=checkbox] { accent-color: var(--accent); }
+
+  /* ===== Empty ===== */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state i {
+    font-size: 28px;
+    margin-bottom: 14px;
+    opacity: 0.3;
+    display: block;
+  }
+  .empty-state .title { font-weight: 600; color: var(--text); margin-bottom: 4px; font-size: 13px; }
+
+  .container { padding-bottom: 90px; }
+
+  /* ===== Add-event modal ===== */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(24,24,27,0.4);
+    backdrop-filter: blur(2px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 60;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    width: 560px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 64px);
+    overflow: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+  }
+  .modal-head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-head h2 { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .modal-body { padding: 16px 18px; }
+  .modal-foot {
+    padding: 12px 18px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 8px; justify-content: flex-end;
+    background: #FAFAFA;
+  }
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface);
+    transition: all 0.1s;
+  }
+  .field input.mono { font-family: 'JetBrains Mono', monospace; }
+  .field textarea { min-height: 60px; resize: vertical; }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.08);
+  }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .seg {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px;
+    background: var(--surface);
+    gap: 0;
+  }
+  .seg button {
+    border: none;
+    background: transparent;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .seg button.active { background: var(--accent); color: white; }
+  .seg button:not(.active):hover { background: var(--hover); color: var(--text); }
+  .btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text);
+  }
+  .btn:hover { background: var(--hover); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+  .btn.primary:hover { background: var(--accent-dark); }
+  .add-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 1px 2px rgba(59,130,246,0.2);
+  }
+  .add-btn:hover { background: var(--accent-dark); }
+  .archive-toolbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .search-wrap { position: relative; flex: 0 0 320px; }
+  .search-wrap i {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--text-soft); font-size: 11px;
+  }
+  .search-input {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 6px;
+    padding: 6px 30px 6px 28px;
+    font-size: 12px;
+    color: var(--text);
+  }
+  .search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.08); }
+  .search-clear {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    border: none; background: transparent; cursor: pointer; padding: 4px;
+    color: var(--text-soft); border-radius: 3px; font-size: 10px;
+  }
+  .search-clear:hover { background: var(--chip); color: var(--text); }
+  .delete-btn { color: var(--weak); }
+  .delete-btn:hover { background: #FEF2F2; color: var(--weak); }
+  .field-error { color: var(--weak); font-size: 11px; margin-top: 4px; }
+
+  /* ===== Auth screen ===== */
+  .auth-shell {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 80;
+    padding: 24px;
+  }
+  .auth-shell.open { display: flex; }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 380px;
+    max-width: 100%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  .auth-brand {
+    padding: 22px 24px 12px;
+    text-align: center;
+  }
+  .auth-brand .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+  }
+  .auth-brand .logo .dot {
+    width: 9px; height: 9px;
+    background: var(--accent);
+    border-radius: 2px;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+  .auth-brand .tag {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+  .auth-tabs {
+    display: flex;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .auth-tab {
+    flex: 1;
+    border: none;
+    background: none;
+    padding: 12px 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .auth-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .auth-form { padding: 20px 24px 22px; }
+  .auth-form .field { margin-bottom: 12px; }
+  .auth-submit {
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .auth-submit:hover { background: var(--accent-dark); }
+  .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+  .auth-error {
+    color: var(--weak);
+    font-size: 12px;
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: #FEF2F2;
+    border-radius: 6px;
+    display: none;
+  }
+  .auth-error.show { display: block; }
+
+  /* ===== User menu ===== */
+  .user-menu { position: relative; }
+  .user-menu-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 4px 8px 4px 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .user-menu-btn:hover { background: var(--chip); }
+  .avatar {
+    width: 22px; height: 22px;
+    background: var(--accent);
+    color: white;
+    font-weight: 700;
+    font-size: 10px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0;
+  }
+  .user-menu .dropdown-menu { right: 0; left: auto; min-width: 200px; }
+  .user-menu .menu-head {
+    padding: 8px 8px 6px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+  .user-menu .menu-head .name { font-weight: 600; font-size: 12px; }
+  .user-menu .menu-head .email {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-muted);
+  }
+  .attribution {
+    font-size: 10px;
+    color: var(--text-soft);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 1px;
+  }
+
+  /* small */
+  .muted { color: var(--text-muted); }
+  .soft { color: var(--text-soft); }
+  .nowrap { white-space: nowrap; }
+</style>
+</head>
+<body>
+  <!-- ====== Topbar ====== -->
+  <div class="topbar">
+    <div class="brand">
+      <span class="dot"></span>
+      Dev.Report OS
+      <span class="version">v1.0</span>
+    </div>
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="pulse">
+        <i class="fa-solid fa-satellite-dish"></i> Future Pulse <span class="count" id="cnt-pulse">0</span>
+      </button>
+      <button class="tab" data-tab="archive">
+        <i class="fa-solid fa-box-archive"></i> ROI Archive <span class="count" id="cnt-archive">0</span>
+      </button>
+      <button class="tab" data-tab="aggregates">
+        <i class="fa-solid fa-chart-column"></i> Aggregates
+      </button>
+    </div>
+    <div class="topbar-right">
+      <div class="live"><span class="live-dot"></span> Live</div>
+      <span class="stamp" id="today-stamp"></span>
+      <div class="user-menu" id="user-menu" style="display:none">
+        <button class="user-menu-btn" id="user-menu-btn">
+          <span class="avatar" id="user-avatar">?</span>
+          <span id="user-name-label">…</span>
+          <i class="fa-solid fa-chevron-down" style="font-size:9px;color:var(--text-soft)"></i>
+        </button>
+        <div class="dropdown-menu" id="user-menu-drop">
+          <div class="menu-head">
+            <div class="name" id="user-menu-name">—</div>
+            <div class="email" id="user-menu-email">—</div>
+          </div>
+          <div class="dropdown-item" id="signout-btn"><i class="fa-solid fa-arrow-right-from-bracket" style="font-size:11px"></i> Sign out</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Auth shell (sign-in / sign-up) ====== -->
+  <div class="auth-shell" id="auth-shell">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="logo"><span class="dot"></span> Dev.Report OS</div>
+        <div class="tag">System of Record for Developer Relations</div>
+      </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-mode="signin">Sign in</button>
+        <button class="auth-tab" data-mode="signup">Create account</button>
+      </div>
+      <form class="auth-form" id="auth-form">
+        <div class="field" id="auth-name-field" style="display:none">
+          <label for="auth-name">Name</label>
+          <input id="auth-name" type="text" autocomplete="name" maxlength="80" placeholder="e.g., Alice Mansour">
+        </div>
+        <div class="field">
+          <label for="auth-email">Email</label>
+          <input id="auth-email" type="email" autocomplete="email" required placeholder="you@company.com">
+        </div>
+        <div class="field">
+          <label for="auth-password">Password</label>
+          <input id="auth-password" type="password" autocomplete="current-password" required minlength="8" placeholder="at least 8 characters">
+        </div>
+        <button class="auth-submit" id="auth-submit" type="submit">Sign in</button>
+        <div class="auth-error" id="auth-error"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====== Filter bar (Pulse only) ====== -->
+  <div class="filter-bar" id="filter-bar">
+    <div class="filter-group">
+      <i class="fa-solid fa-code field-icon"></i>
+      <input class="filter-input" id="filter-tech" placeholder="Technology (e.g., Java, AI, Rust)">
+    </div>
+    <div class="filter-group">
+      <i class="fa-solid fa-location-dot field-icon"></i>
+      <input class="filter-input" id="filter-location" placeholder="Location (e.g., Cairo, Egypt)">
+    </div>
+    <div class="filter-group" id="medium-wrap">
+      <div class="multi-select" id="medium-select" tabindex="0">
+        <i class="fa-solid fa-tower-broadcast field-icon"></i>
+        <span class="multi-select-label-key">Medium:</span><span id="medium-label">All</span>
+        <i class="fa-solid fa-chevron-down chev"></i>
+      </div>
+      <div class="dropdown-menu" id="medium-menu">
+        <label class="dropdown-item"><input type="checkbox" value="Physical" checked> <i class="fa-solid fa-people-group" style="color:#15803D;font-size:11px;width:12px"></i> Physical</label>
+        <label class="dropdown-item"><input type="checkbox" value="Virtual" checked> <i class="fa-solid fa-video" style="color:#1D4ED8;font-size:11px;width:12px"></i> Virtual</label>
+      </div>
+    </div>
+    <button class="scrape-btn" id="scrape-btn">
+      <i class="fa-solid fa-spider" id="scrape-icon"></i>
+      <span id="scrape-label">Scrape Sources</span>
+    </button>
+  </div>
+
+  <!-- ====== Container ====== -->
+  <div class="container">
+    <div id="view-root"></div>
+  </div>
+
+  <!-- ====== Reporting drawer (Aggregates only) ====== -->
+  <div class="drawer" id="drawer" style="display:none">
+    <button class="drawer-toggle" id="drawer-toggle">
+      <i class="fa-solid fa-chevron-up chev"></i>
+      Reporting &amp; Distribution
+      <span class="hint">
+        <span>YTD: <span class="stat" id="hint-spend">$0</span> spend · <span class="stat" id="hint-signups">0</span> signups</span>
+        <i class="fa-solid fa-chevron-down" style="font-size:9px"></i>
+      </span>
+    </button>
+    <div class="drawer-content">
+      <div class="drawer-content-inner">
+        <button class="drawer-btn" data-action="slack"><i class="fa-brands fa-slack" style="color:#4A154B"></i> Broadcast to Slack</button>
+        <button class="drawer-btn" data-action="teams"><i class="fa-brands fa-microsoft" style="color:#5059C9"></i> Broadcast to Teams</button>
+        <div class="drawer-divider"></div>
+        <button class="drawer-btn" data-action="csv"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+        <button class="drawer-btn primary" data-action="pdf"><i class="fa-solid fa-file-pdf"></i> Download PDF Report</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- ====== Add / edit past-event modal ====== -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <h2 id="modal-title"><i class="fa-solid fa-plus" style="font-size:11px;color:var(--accent)"></i> Add past event</h2>
+        <button class="icon-btn" id="modal-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="m-name">Event name *</label>
+          <input id="m-name" type="text" maxlength="200" placeholder="e.g., DevFest Cairo">
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label for="m-date">Date *</label>
+            <input id="m-date" class="mono" type="date">
+          </div>
+          <div class="field">
+            <label>Medium</label>
+            <div class="seg" id="m-medium">
+              <button type="button" data-v="Physical" class="active">Physical</button>
+              <button type="button" data-v="Virtual">Virtual</button>
+            </div>
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label for="m-location">Location</label>
+            <input id="m-location" type="text" maxlength="100" placeholder="e.g., Cairo, Egypt">
+          </div>
+          <div class="field">
+            <label for="m-tech">Technology (comma-separated)</label>
+            <input id="m-tech" type="text" maxlength="200" placeholder="Java, Spring, AI">
+          </div>
+        </div>
+        <div class="field">
+          <label for="m-url">Source URL</label>
+          <input id="m-url" class="mono" type="url" placeholder="https://...">
+        </div>
+        <div class="row-3">
+          <div class="field">
+            <label for="m-spend">Spend (USD)</label>
+            <input id="m-spend" class="mono" type="number" min="0" placeholder="0">
+          </div>
+          <div class="field">
+            <label for="m-signups">Signups</label>
+            <input id="m-signups" class="mono" type="number" min="0" placeholder="0">
+          </div>
+          <div class="field">
+            <label for="m-engagements">Engagements</label>
+            <input id="m-engagements" class="mono" type="number" min="0" placeholder="0">
+          </div>
+        </div>
+        <div class="field">
+          <label>Outcome</label>
+          <div class="seg" id="m-outcome">
+            <button type="button" data-v="">None</button>
+            <button type="button" data-v="weak">Weak</button>
+            <button type="button" data-v="medium">Medium</button>
+            <button type="button" data-v="strong">Strong</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="m-notes">Strategic notes</label>
+          <textarea id="m-notes" maxlength="2000" placeholder="What worked, what didn't, follow-ups…"></textarea>
+        </div>
+        <div class="field-error" id="modal-error" style="display:none"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" id="modal-cancel">Cancel</button>
+        <button class="btn primary" id="modal-save"><i class="fa-solid fa-check" style="font-size:11px"></i> Save event</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ============================================================
+   Dev.Report OS — single-page application
+   ============================================================ */
+
+/* ---------- Mock data generators ---------- */
+const TECHS = ['Java','Spring','AI','ML','Rust','Go','Python','TypeScript','React','Vue','Kubernetes','Docker','GraphQL','PostgreSQL','Kafka','WebAssembly','Solidity','Flutter','Swift','LLM','RAG','Node.js','Next.js','Terraform','Redis','gRPC'];
+const LOCATIONS_PHYSICAL = ['Cairo, Egypt','Alexandria, Egypt','Dubai, UAE','Riyadh, KSA','Lagos, Nigeria','Nairobi, Kenya','Casablanca, Morocco','Berlin, Germany','Amsterdam, NL','London, UK','Singapore','Bangalore, India','Cape Town, SA','Istanbul, Turkey','Tunis, Tunisia'];
+const EVENT_PREFIXES = ['DevFest','Hackathon','Summit','Meetup','Conf','Bootcamp','Workshop','Symposium','Demo Day','Code Sprint','Forum'];
+const EVENT_TOPICS = ['Cloud Native','AI Builders','DevOps','Open Source','Spring Boot','GenAI','Platform Eng','WebDev','Mobile','Security','Data Eng','MLOps','Backend','Frontend','API Design','Observability','LLM Apps','Edge Compute'];
+const SOURCES = ['devpost.com','meetup.com','egjug.org','gdg.community.dev','eventbrite.com','lu.ma','hopin.com'];
+
+function uuid() {
+  return 'xxxxxxxx'.replace(/x/g, () => (Math.random()*16|0).toString(16));
+}
+function pick(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+function pickMany(arr, n) {
+  const s = new Set();
+  while (s.size < n) s.add(pick(arr));
+  return Array.from(s);
+}
+function dayOffset(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
+function fmtDate(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+}
+function fmtMoney(n) {
+  return n.toLocaleString('en-US');
+}
+function monthKey(iso) {
+  return iso.slice(0, 7); // YYYY-MM
+}
+function monthLabel(iso) {
+  const d = new Date(iso + '-01T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+function genFuture(n) {
+  const events = [];
+  for (let i = 0; i < n; i++) {
+    const days = 2 + Math.floor(Math.random() * 320);
+    const medium = Math.random() > 0.45 ? 'Physical' : 'Virtual';
+    const loc = medium === 'Virtual' ? 'Online' : pick(LOCATIONS_PHYSICAL);
+    const src = pick(SOURCES);
+    events.push({
+      id: uuid(),
+      name: `${pick(EVENT_PREFIXES)}: ${pick(EVENT_TOPICS)}`,
+      date: dayOffset(days),
+      technology: pickMany(TECHS, 1 + Math.floor(Math.random()*3)),
+      location: loc,
+      medium,
+      url: `https://${src}/event/${uuid()}`,
+      source: src,
+      status: 'pending',
+      tracked: false,
+      metrics: { spend: 0, signups: 0, engagements: 0, outcome: null, notes: '' }
+    });
+  }
+  return events.sort((a,b) => a.date.localeCompare(b.date));
+}
+
+function genPast(n) {
+  const events = [];
+  const outcomes = ['strong','strong','medium','medium','weak'];
+  const NOTES = [
+    'Strong qualified leads from the demo booth. Re-run next quarter.',
+    'Audience was junior — pipeline impact limited. Consider partner co-marketing.',
+    'Hands-on workshop format outperformed keynote. Lock in similar slots.',
+    'Mid-funnel engagement; low signup conversion despite high foot traffic.',
+    'Sponsorship tier was inadequate — invisible to target audience.',
+    'Co-marketing with regional GDG drove unexpected pipeline lift.',
+    'Bad weather suppressed in-person turnout; hybrid stream salvaged.',
+    'Speaker slot landed perfectly; CTA conversion was the highest of YTD.',
+    'Booth location near coffee was decisive. Negotiate same placement.',
+    ''
+  ];
+  for (let i = 0; i < n; i++) {
+    const days = -7 - Math.floor(Math.random() * 340);
+    const medium = Math.random() > 0.45 ? 'Physical' : 'Virtual';
+    const loc = medium === 'Virtual' ? 'Online' : pick(LOCATIONS_PHYSICAL);
+    const outcome = pick(outcomes);
+    const spend = outcome === 'strong' ? 800 + Math.floor(Math.random()*2400)
+                : outcome === 'medium' ? 350 + Math.floor(Math.random()*1100)
+                : Math.floor(Math.random()*600);
+    const signups = outcome === 'strong' ? 80 + Math.floor(Math.random()*240)
+                  : outcome === 'medium' ? 20 + Math.floor(Math.random()*80)
+                  : Math.floor(Math.random()*30);
+    events.push({
+      id: uuid(),
+      name: `${pick(EVENT_PREFIXES)}: ${pick(EVENT_TOPICS)}`,
+      date: dayOffset(days),
+      technology: pickMany(TECHS, 1 + Math.floor(Math.random()*3)),
+      location: loc,
+      medium,
+      url: `https://${pick(SOURCES)}/event/${uuid()}`,
+      status: 'attended',
+      tracked: true,
+      metrics: {
+        spend,
+        signups,
+        engagements: Math.floor(signups * (0.1 + Math.random()*0.3)),
+        outcome,
+        notes: pick(NOTES)
+      }
+    });
+  }
+  return events.sort((a,b) => b.date.localeCompare(a.date));
+}
+
+/* ---------- State ---------- */
+const STATE = {
+  tab: 'pulse',
+  future: [],
+  past: [],
+  filters: { tech: '', location: '', mediums: new Set(['Physical','Virtual']) },
+  archiveSearch: '',
+  scraping: false,
+  drawerOpen: false,
+  user: null
+};
+
+/* ---------- Helpers ---------- */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const root = $('#view-root');
+
+function showToast(msg, icon = 'fa-circle-check') {
+  const t = $('#toast');
+  t.innerHTML = `<i class="fa-solid ${icon}"></i> ${msg}`;
+  t.classList.add('show');
+  clearTimeout(t._timeout);
+  t._timeout = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- Filtering (Pulse) ---------- */
+function getFilteredFuture() {
+  const { tech, location, mediums } = STATE.filters;
+  const techTerms = tech.toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+  const locTerm = location.toLowerCase().trim();
+  return STATE.future.filter(e => {
+    if (!mediums.has(e.medium)) return false;
+    // Online events pass any city filter — geography is irrelevant for virtual.
+    const locStr = e.location.toLowerCase();
+    if (locTerm && locStr !== 'online' && !locStr.includes(locTerm)) return false;
+    if (techTerms.length) {
+      const techStr = (e.technology.join(' ') + ' ' + e.name).toLowerCase();
+      if (!techTerms.some(t => techStr.includes(t))) return false;
+    }
+    return true;
+  });
+}
+
+/* ---------- Renderers ---------- */
+function reachPill(medium) {
+  const cls = medium.toLowerCase();
+  const icon = medium === 'Virtual' ? 'fa-video' : 'fa-people-group';
+  return `<span class="reach-pill ${cls}"><i class="fa-solid ${icon}"></i>${medium}</span>`;
+}
+
+function techTags(arr) {
+  return `<div class="tech-tags">${arr.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>`;
+}
+
+function outcomeDots(currentVal, eventId) {
+  const levels = [
+    { v: 'weak', label: 'Weak' },
+    { v: 'medium', label: 'Medium' },
+    { v: 'strong', label: 'Strong' }
+  ];
+  return `<div class="outcome-group" data-id="${eventId}">
+    ${levels.map(l => `<button class="outcome-dot ${l.v} ${currentVal === l.v ? 'active' : ''}" data-outcome="${l.v}" title="${l.label}"></button>`).join('')}
+  </div>`;
+}
+
+/* ---------- Share / Calendar (real) ---------- */
+async function shareEvent(evt) {
+  if (!evt) return;
+  const lines = [
+    `📡 ${evt.name}`,
+    `📅 ${fmtDate(evt.date)}`,
+    `📍 ${evt.location} · ${evt.medium}`,
+    evt.technology?.length ? `🏷  ${evt.technology.join(', ')}` : null,
+    `🔗 ${evt.url}`,
+    '',
+    'Shared via Dev.Report OS'
+  ].filter(Boolean);
+  const text = lines.join('\n');
+
+  // Web Share API: native sheet on iOS/Android/desktop Safari; lets the user
+  // actually post into Slack, Mail, Messages, etc.
+  if (navigator.share && navigator.canShare?.({ url: evt.url })) {
+    try {
+      await navigator.share({ title: evt.name, text, url: evt.url });
+      showToast(`Shared "${evt.name}"`, 'fa-paper-plane');
+      return;
+    } catch (err) {
+      if (err?.name === 'AbortError') return;          // user cancelled
+      // fall through to clipboard
+    }
+  }
+  // Clipboard fallback for desktop browsers without Web Share
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast(`Copied "${evt.name}" — paste into Slack/Teams/Email`, 'fa-clipboard-check');
+  } catch (err) {
+    console.error('[share] clipboard failed:', err);
+    showToast('Share blocked — see console', 'fa-triangle-exclamation');
+  }
+}
+
+function downloadIcs(evt) {
+  if (!evt) return;
+  const ics = buildIcs(evt);
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (evt.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').slice(0, 60) || 'event') + '.ics';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast(`Calendar file downloaded · open to add`, 'fa-calendar-plus');
+}
+
+function buildIcs(evt) {
+  const startYmd = evt.date.replace(/-/g, '');
+  const endYmd = nextDayYmd(evt.date);
+  const uid = `${evt.id || crypto.randomUUID?.() || Math.random().toString(36).slice(2)}@dev.report.os`;
+  const dtstamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const descLines = [
+    evt.name,
+    `Source: ${evt.source || 'Dev.Report OS'}`,
+    evt.technology?.length ? `Tech: ${evt.technology.join(', ')}` : null,
+    `Medium: ${evt.medium}`,
+    evt.url
+  ].filter(Boolean);
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Dev.Report OS//Future Pulse//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${dtstamp}`,
+    `DTSTART;VALUE=DATE:${startYmd}`,
+    `DTEND;VALUE=DATE:${endYmd}`,
+    `SUMMARY:${icsEscape(evt.name)}`,
+    `DESCRIPTION:${icsEscape(descLines.join('\n'))}`,
+    `LOCATION:${icsEscape(evt.location)}`,
+    `URL:${evt.url}`,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+}
+
+function icsEscape(s) {
+  return String(s ?? '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+}
+
+function nextDayYmd(iso) {
+  const d = new Date(iso + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+/* --- Pulse view --- */
+function renderPulse() {
+  const events = getFilteredFuture();
+  $('#cnt-pulse').textContent = events.length;
+  $('#cnt-archive').textContent = STATE.past.length;
+
+  if (events.length === 0) {
+    root.innerHTML = `
+      ${pulseHeader(0)}
+      <div class="empty-state">
+        <i class="fa-solid fa-magnifying-glass-minus"></i>
+        <div class="title">No matching events</div>
+        <div>Try widening your filters, or click <strong>Scrape Sources</strong> to pull fresh listings.</div>
+      </div>`;
+    return;
+  }
+
+  const rows = events.map(e => `
+    <tr class="${e.tracked ? 'tracked' : ''}" data-id="${e.id}">
+      <td><input type="checkbox" class="checkbox track-cb" ${e.tracked ? 'checked' : ''} title="Track this event"></td>
+      <td class="mono nowrap">${fmtDate(e.date)}</td>
+      <td>
+        <div class="event-cell">
+          <span class="event-name">${escapeHtml(e.name)}</span>
+          <span class="meta">${escapeHtml(e.location)}</span>
+        </div>
+      </td>
+      <td>${techTags(e.technology)}</td>
+      <td>${reachPill(e.medium)}</td>
+      <td><a class="source-link" href="${e.url}" target="_blank" rel="noopener">${e.source}<i class="fa-solid fa-arrow-up-right-from-square" style="font-size:9px"></i></a></td>
+      <td>
+        <div class="row-actions">
+          <button class="icon-btn accent share-btn" title="Share with team"><i class="fa-solid fa-paper-plane"></i></button>
+          <button class="icon-btn calendar-btn" title="Sync to calendar"><i class="fa-regular fa-calendar-plus"></i></button>
+          <button class="icon-btn dismiss-btn" title="Dismiss"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  root.innerHTML = `
+    ${pulseHeader(events.length)}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:38px"></th>
+            <th style="width:110px">Date</th>
+            <th>Event</th>
+            <th style="width:280px">Tech Stack</th>
+            <th style="width:120px">Reach</th>
+            <th style="width:200px">Source</th>
+            <th style="width:120px">Sync / Share</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  // Wire row interactions
+  $$('#view-root .track-cb').forEach(cb => {
+    cb.addEventListener('change', (ev) => {
+      const tr = ev.target.closest('tr');
+      const id = tr.dataset.id;
+      const evt = STATE.future.find(x => x.id === id);
+      evt.tracked = ev.target.checked;
+      tr.classList.toggle('tracked', evt.tracked);
+      if (evt.tracked) showToast(`Tracking "${evt.name}"`);
+    });
+  });
+  $$('#view-root .share-btn').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      const id = ev.currentTarget.closest('tr').dataset.id;
+      shareEvent(STATE.future.find(x => x.id === id));
+    });
+  });
+  $$('#view-root .calendar-btn').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      const id = ev.currentTarget.closest('tr').dataset.id;
+      downloadIcs(STATE.future.find(x => x.id === id));
+    });
+  });
+  $$('#view-root .dismiss-btn').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      const tr = ev.target.closest('tr');
+      const id = tr.dataset.id;
+      STATE.future = STATE.future.filter(x => x.id !== id);
+      renderPulse();
+    });
+  });
+}
+
+function pulseHeader(count) {
+  const tracked = STATE.future.filter(e => e.tracked).length;
+  return `<div class="header-block">
+    <div>
+      <h1><i class="fa-solid fa-satellite-dish" style="color:var(--accent);font-size:12px"></i> Future Pulse <span class="muted" style="font-weight:500;font-size:12px;margin-left:4px">/ Discovery</span></h1>
+      <div class="sub">Upcoming community events scraped from Devpost, Meetup, EGJUG, GDG and partner sources.</div>
+    </div>
+    <div class="header-meta">
+      <span><span class="k">SHOWING</span> <span class="mono">${count}</span></span>
+      <span><span class="k">TRACKED</span> <span class="mono">${tracked}</span></span>
+      <span><span class="k">SCANNED</span> <span class="mono">${STATE.future.length}</span></span>
+    </div>
+  </div>`;
+}
+
+/* --- Archive view --- */
+function renderArchive() {
+  $('#cnt-archive').textContent = STATE.past.length;
+
+  const q = STATE.archiveSearch.toLowerCase().trim();
+  const filtered = !q ? STATE.past : STATE.past.filter(e => {
+    const hay = `${e.name} ${e.location} ${(e.technology||[]).join(' ')} ${e.metrics?.notes||''}`.toLowerCase();
+    return hay.includes(q);
+  });
+
+  const rows = filtered.map(e => `
+    <tr data-id="${e.id}">
+      <td class="mono nowrap">${fmtDate(e.date)}</td>
+      <td>
+        <div class="event-cell">
+          <span class="event-name">${escapeHtml(e.name)}</span>
+          <span class="meta">${escapeHtml(e.location)} · ${e.medium}${e.createdByName ? ` · added by ${escapeHtml(e.createdByName)}` : ''}${e.lastEditedByName && e.lastEditedByName !== e.createdByName ? ` · edited by ${escapeHtml(e.lastEditedByName)}` : ''}</span>
+        </div>
+      </td>
+      <td>${techTags(e.technology)}</td>
+      <td class="num">
+        <div class="spend-cell" style="justify-content:flex-end">
+          <span class="currency">$</span>
+          <input class="inline-input mono numeric" data-field="spend" type="number" min="0" value="${e.metrics.spend}">
+        </div>
+      </td>
+      <td class="num"><input class="inline-input mono numeric" data-field="signups" type="number" min="0" value="${e.metrics.signups}"></td>
+      <td class="num"><input class="inline-input mono numeric" data-field="engagements" type="number" min="0" value="${e.metrics.engagements}"></td>
+      <td>${outcomeDots(e.metrics.outcome, e.id)}</td>
+      <td><input class="inline-input notes" data-field="notes" type="text" value="${escapeHtml(e.metrics.notes || '')}" placeholder="Post-event observations…"></td>
+      <td><button class="icon-btn delete-btn" title="Delete event"><i class="fa-solid fa-trash" style="font-size:11px"></i></button></td>
+    </tr>`).join('');
+
+  const totalSpend = STATE.past.reduce((s,e)=>s+(+e.metrics.spend||0), 0);
+  const totalSignups = STATE.past.reduce((s,e)=>s+(+e.metrics.signups||0), 0);
+
+  root.innerHTML = `
+    <div class="header-block">
+      <div>
+        <h1><i class="fa-solid fa-box-archive" style="color:var(--accent);font-size:12px"></i> Dev.Report Intelligence Ledger <span class="muted" style="font-weight:500;font-size:12px;margin-left:4px">/ ROI Archive</span></h1>
+        <div class="sub">Source-of-truth ledger of completed events. Edits autosave. Add manually or import from Future Pulse.</div>
+      </div>
+      <div class="header-meta">
+        <span><span class="k">EVENTS</span> <span class="mono">${STATE.past.length}</span></span>
+        <span><span class="k">SPEND</span> <span class="mono">$${fmtMoney(totalSpend)}</span></span>
+        <span><span class="k">SIGNUPS</span> <span class="mono">${fmtMoney(totalSignups)}</span></span>
+      </div>
+    </div>
+    <div class="archive-toolbar">
+      <div class="search-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input class="search-input" id="archive-search" type="text" placeholder="Search name, location, tech, notes…" value="${escapeHtml(STATE.archiveSearch)}">
+        ${STATE.archiveSearch ? `<button class="search-clear" id="archive-search-clear" title="Clear"><i class="fa-solid fa-xmark"></i></button>` : ''}
+      </div>
+      <div class="muted" style="font-size:11px">${q ? `Showing ${filtered.length} of ${STATE.past.length}` : `${STATE.past.length} events`}</div>
+      <button class="add-btn" id="archive-add" style="margin-left:auto"><i class="fa-solid fa-plus" style="font-size:11px"></i> Add past event</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:110px">Date</th>
+            <th>Event</th>
+            <th style="width:240px">Tech Stack</th>
+            <th class="num" style="width:120px">Spend</th>
+            <th class="num" style="width:100px">Signups</th>
+            <th class="num" style="width:110px">Engagements</th>
+            <th style="width:90px">Outcome</th>
+            <th>Strategic Notes</th>
+            <th style="width:40px"></th>
+          </tr>
+        </thead>
+        <tbody>${rows || `<tr><td colspan="9" class="muted" style="padding:32px;text-align:center">${q ? 'No matches. Try a different search.' : 'No past events yet. Click <strong>Add past event</strong> to log one.'}</td></tr>`}</tbody>
+      </table>
+    </div>`;
+
+  // Inline edits with debounced PATCH to the backend
+  $$('#view-root .inline-input').forEach(inp => {
+    const handler = (ev) => {
+      const tr = ev.target.closest('tr');
+      const id = tr.dataset.id;
+      const field = ev.target.dataset.field;
+      const evt = STATE.past.find(x => x.id === id);
+      if (!evt) return;
+      const raw = ev.target.value;
+      const value = (field === 'notes') ? raw : (parseInt(raw, 10) || 0);
+      evt.metrics[field] = value;
+      patchArchive(id, { metrics: { [field]: value } });
+    };
+    // 'input' for live typing (debounced inside patchArchive), 'change' for commit
+    inp.addEventListener('input', handler);
+  });
+  // Outcome dot edits — persist immediately
+  $$('#view-root .outcome-dot').forEach(dot => {
+    dot.addEventListener('click', (ev) => {
+      const group = ev.currentTarget.closest('.outcome-group');
+      const id = group.dataset.id;
+      const newVal = ev.currentTarget.dataset.outcome;
+      const evt = STATE.past.find(x => x.id === id);
+      if (!evt) return;
+      evt.metrics.outcome = (evt.metrics.outcome === newVal) ? null : newVal;
+      group.querySelectorAll('.outcome-dot').forEach(d => {
+        d.classList.toggle('active', d.dataset.outcome === evt.metrics.outcome);
+      });
+      patchArchive(id, { metrics: { outcome: evt.metrics.outcome } }, /*immediate*/ true);
+    });
+  });
+  // Delete row
+  $$('#view-root .delete-btn').forEach(btn => {
+    btn.addEventListener('click', async (ev) => {
+      const tr = ev.currentTarget.closest('tr');
+      const id = tr.dataset.id;
+      const evt = STATE.past.find(x => x.id === id);
+      if (!evt) return;
+      if (!confirm(`Delete "${evt.name}"? This cannot be undone.`)) return;
+      try {
+        const r = await fetch(`/api/archive/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        STATE.past = STATE.past.filter(x => x.id !== id);
+        renderArchive();
+        showToast(`Deleted "${evt.name}"`, 'fa-trash');
+      } catch (err) {
+        console.error(err);
+        showToast('Delete failed — see console', 'fa-triangle-exclamation');
+      }
+    });
+  });
+  // Search
+  const searchInp = $('#archive-search');
+  if (searchInp) {
+    searchInp.addEventListener('input', (ev) => {
+      STATE.archiveSearch = ev.target.value;
+      renderArchive();
+      // restore focus + cursor
+      const fresh = $('#archive-search');
+      if (fresh) { fresh.focus(); fresh.setSelectionRange(fresh.value.length, fresh.value.length); }
+    });
+  }
+  const clearBtn = $('#archive-search-clear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      STATE.archiveSearch = '';
+      renderArchive();
+    });
+  }
+  // Add event
+  const addBtn = $('#archive-add');
+  if (addBtn) addBtn.addEventListener('click', () => openAddModal());
+}
+
+/* ---------- Archive persistence helpers ---------- */
+const _patchTimers = new Map();
+function patchArchive(id, patch, immediate = false) {
+  const fire = async () => {
+    try {
+      const r = await fetch(`/api/archive/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch)
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    } catch (err) {
+      console.error('[patch] failed for', id, err);
+      showToast('Save failed — changes not persisted', 'fa-triangle-exclamation');
+    }
+  };
+  if (immediate) { fire(); return; }
+  if (_patchTimers.has(id)) clearTimeout(_patchTimers.get(id));
+  _patchTimers.set(id, setTimeout(fire, 450));
+}
+
+async function hydrateArchive() {
+  try {
+    const r = await fetch('/api/archive');
+    if (r.status === 401) { STATE.user = null; showAuthShell(); return; }
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    STATE.past = Array.isArray(data.events) ? data.events : [];
+    $('#cnt-archive').textContent = STATE.past.length;
+  } catch (err) {
+    console.error('[hydrate archive]', err);
+    showToast('Could not load archive — see console', 'fa-triangle-exclamation');
+  }
+}
+
+/* --- Aggregates view --- */
+function computeAggregates() {
+  const past = STATE.past;
+  const ytd = new Date().getFullYear();
+  const ytdEvents = past.filter(e => new Date(e.date).getFullYear() === ytd);
+
+  const totalSpend = ytdEvents.reduce((s,e)=>s+(+e.metrics.spend||0), 0);
+  const totalSignups = ytdEvents.reduce((s,e)=>s+(+e.metrics.signups||0), 0);
+  const totalEngagements = ytdEvents.reduce((s,e)=>s+(+e.metrics.engagements||0), 0);
+  const cps = totalSignups ? (totalSpend / totalSignups) : 0;
+
+  // Monthly rollup (all archived data, sorted desc)
+  const byMonth = new Map();
+  past.forEach(e => {
+    const k = monthKey(e.date);
+    if (!byMonth.has(k)) byMonth.set(k, { key: k, events: [], spend: 0, signups: 0, engagements: 0, outcomes: { strong: 0, medium: 0, weak: 0 } });
+    const m = byMonth.get(k);
+    m.events.push(e);
+    m.spend += +e.metrics.spend || 0;
+    m.signups += +e.metrics.signups || 0;
+    m.engagements += +e.metrics.engagements || 0;
+    if (e.metrics.outcome) m.outcomes[e.metrics.outcome]++;
+  });
+  const months = Array.from(byMonth.values()).sort((a,b) => b.key.localeCompare(a.key));
+  months.forEach(m => {
+    const o = m.outcomes;
+    const top = ['strong','medium','weak'].reduce((a,b) => o[a] >= o[b] ? a : b);
+    m.modeOutcome = (o.strong + o.medium + o.weak === 0) ? null : top;
+  });
+
+  return { totalSpend, totalSignups, totalEngagements, cps, months, eventsYTD: ytdEvents.length };
+}
+
+function renderAggregates() {
+  const agg = computeAggregates();
+  $('#hint-spend').textContent = `$${fmtMoney(agg.totalSpend)}`;
+  $('#hint-signups').textContent = fmtMoney(agg.totalSignups);
+
+  // Cards
+  const cards = `
+    <div class="cards-row">
+      <div class="card">
+        <div class="label"><i class="fa-solid fa-money-bill-trend-up" style="color:var(--accent)"></i> YTD Total Spend</div>
+        <div class="value"><span class="currency">$</span>${fmtMoney(agg.totalSpend)}</div>
+        <div class="trend up"><i class="fa-solid fa-arrow-trend-up" style="font-size:10px"></i> Across ${agg.eventsYTD} events</div>
+      </div>
+      <div class="card">
+        <div class="label"><i class="fa-solid fa-user-plus" style="color:var(--strong)"></i> YTD Total Signups</div>
+        <div class="value">${fmtMoney(agg.totalSignups)}</div>
+        <div class="trend up"><i class="fa-solid fa-arrow-trend-up" style="font-size:10px"></i> Developer reach</div>
+      </div>
+      <div class="card">
+        <div class="label"><i class="fa-solid fa-handshake" style="color:var(--medium)"></i> YTD Engagements</div>
+        <div class="value">${fmtMoney(agg.totalEngagements)}</div>
+        <div class="trend"><i class="fa-solid fa-bolt" style="font-size:10px"></i> Deep interactions</div>
+      </div>
+      <div class="card">
+        <div class="label"><i class="fa-solid fa-coins" style="color:var(--text-muted)"></i> Cost / Signup</div>
+        <div class="value"><span class="currency">$</span>${agg.cps.toFixed(2)}</div>
+        <div class="trend ${agg.cps < 15 ? 'up' : 'down'}"><i class="fa-solid ${agg.cps < 15 ? 'fa-arrow-trend-down' : 'fa-arrow-trend-up'}" style="font-size:10px"></i> Efficiency benchmark</div>
+      </div>
+    </div>`;
+
+  // Monthly rollup table
+  const rows = agg.months.map(m => {
+    const total = m.outcomes.strong + m.outcomes.medium + m.outcomes.weak;
+    const pct = (n) => total ? (n/total)*100 : 0;
+    const cpsRow = m.signups ? (m.spend / m.signups) : 0;
+    return `
+      <tr>
+        <td class="mono nowrap"><strong>${monthLabel(m.key)}</strong></td>
+        <td class="num mono">${m.events.length}</td>
+        <td class="num"><span class="mono"><span class="soft">$</span>${fmtMoney(m.spend)}</span></td>
+        <td class="num mono">${fmtMoney(m.signups)}</td>
+        <td class="num mono">${fmtMoney(m.engagements)}</td>
+        <td class="num mono">${cpsRow ? '$'+cpsRow.toFixed(2) : '—'}</td>
+        <td>
+          <div class="stacked-cell">
+            <div class="stacked-bar" title="Strong ${m.outcomes.strong} · Medium ${m.outcomes.medium} · Weak ${m.outcomes.weak}">
+              <span class="s-strong" style="width:${pct(m.outcomes.strong)}%"></span>
+              <span class="s-medium" style="width:${pct(m.outcomes.medium)}%"></span>
+              <span class="s-weak" style="width:${pct(m.outcomes.weak)}%"></span>
+            </div>
+            <span class="stacked-legend">${m.modeOutcome ? m.modeOutcome.toUpperCase() : '—'}</span>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  root.innerHTML = `
+    <div class="header-block">
+      <div>
+        <h1><i class="fa-solid fa-chart-column" style="color:var(--accent);font-size:12px"></i> Aggregates <span class="muted" style="font-weight:500;font-size:12px;margin-left:4px">/ Intelligence Rollup</span></h1>
+        <div class="sub">Year-to-date performance & monthly outcome distribution. Distribute via the reporting drawer.</div>
+      </div>
+      <div class="header-meta" style="display:flex;align-items:center;gap:14px">
+        <span><span class="k">YEAR</span> <span class="mono">${new Date().getFullYear()}</span></span>
+        <span><span class="k">MONTHS</span> <span class="mono">${agg.months.length}</span></span>
+        <button class="add-btn" id="aggregates-add"><i class="fa-solid fa-plus" style="font-size:11px"></i> Add past event</button>
+      </div>
+    </div>
+    ${cards}
+    <div class="panel">
+      <div class="panel-head">
+        <h2><i class="fa-solid fa-table-list" style="font-size:10px"></i> Monthly Rollup</h2>
+        <span class="meta">${agg.months.length} months · grouped from ledger</span>
+      </div>
+      <div class="table-wrap" style="border-bottom:none">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:140px">Month</th>
+              <th class="num" style="width:120px">Events Attended</th>
+              <th class="num" style="width:140px">Total Spend</th>
+              <th class="num" style="width:120px">Total Signups</th>
+              <th class="num" style="width:140px">Engagements</th>
+              <th class="num" style="width:120px">Cost / Signup</th>
+              <th>Outcome Distribution</th>
+            </tr>
+          </thead>
+          <tbody>${rows || `<tr><td colspan="7" class="muted" style="padding:24px;text-align:center">No archived events yet. Click <strong>Add past event</strong> to log one.</td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  const addBtn = $('#aggregates-add');
+  if (addBtn) addBtn.addEventListener('click', () => openAddModal());
+}
+
+/* ---------- Tab switching ---------- */
+function setTab(tab) {
+  STATE.tab = tab;
+  $$('#tabs .tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  $('#filter-bar').classList.toggle('hidden', tab !== 'pulse');
+  $('#drawer').style.display = (tab === 'aggregates') ? 'block' : 'none';
+  if (tab === 'pulse') renderPulse();
+  if (tab === 'archive') renderArchive();
+  if (tab === 'aggregates') renderAggregates();
+}
+
+/* ---------- Filter wiring ---------- */
+function wireFilters() {
+  $('#filter-tech').addEventListener('input', (ev) => {
+    STATE.filters.tech = ev.target.value;
+    if (STATE.tab === 'pulse') renderPulse();
+  });
+  $('#filter-location').addEventListener('input', (ev) => {
+    STATE.filters.location = ev.target.value;
+    if (STATE.tab === 'pulse') renderPulse();
+  });
+
+  const select = $('#medium-select');
+  const menu = $('#medium-menu');
+  select.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    menu.classList.toggle('open');
+  });
+  document.addEventListener('click', () => menu.classList.remove('open'));
+  menu.addEventListener('click', (ev) => ev.stopPropagation());
+  $$('#medium-menu input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      STATE.filters.mediums = new Set(
+        $$('#medium-menu input[type=checkbox]:checked').map(c => c.value)
+      );
+      const arr = Array.from(STATE.filters.mediums);
+      $('#medium-label').textContent = arr.length === 0 ? 'None' : arr.length === 2 ? 'All' : arr[0];
+      if (STATE.tab === 'pulse') renderPulse();
+    });
+  });
+}
+
+/* ---------- Scrape ----------
+   NOTE: a browser-only page cannot directly fetch Meetup / Devpost / EGJUG / etc
+   because of CORS. This wiring is intentionally a no-op until a real source
+   (backend scraper, RSS-via-proxy, or static JSON feed) is connected.
+*/
+function wireScrape() {
+  $('#scrape-btn').addEventListener('click', async () => {
+    if (STATE.scraping) return;
+    STATE.scraping = true;
+    const icon = $('#scrape-icon');
+    const label = $('#scrape-label');
+    icon.classList.remove('fa-spider');
+    icon.classList.add('fa-arrows-rotate','spinning');
+    label.textContent = 'Scraping…';
+
+    try {
+      const events = await runScrape();
+      // Replace, don't accumulate — each scrape is a fresh query
+      STATE.future = events.sort((a,b) => a.date.localeCompare(b.date));
+      const srcSummary = (runScrape._sources || [])
+        .filter(s => s.ok)
+        .map(s => `${s.name}:${s.count}`).join(' · ');
+      if (events.length) {
+        showToast(`${events.length} events · ${srcSummary || 'no source breakdown'}`, 'fa-spider');
+      } else {
+        showToast('No events matched — try widening filters', 'fa-triangle-exclamation');
+      }
+    } catch (err) {
+      showToast('Scrape failed — see console', 'fa-triangle-exclamation');
+      console.error('[Dev.Report OS] Scrape error:', err);
+    } finally {
+      STATE.scraping = false;
+      icon.classList.remove('fa-arrows-rotate','spinning');
+      icon.classList.add('fa-spider');
+      label.textContent = 'Scrape Sources';
+      if (STATE.tab === 'pulse') renderPulse();
+    }
+  });
+}
+
+/* ---------- Real scraper ----------
+   Calls the Node backend at /api/events with the current filter inputs so the
+   adapters can do server-side keyword/location queries (Meetup needs this).
+*/
+async function runScrape() {
+  const params = new URLSearchParams({ refresh: '1' });
+  if (STATE.filters.tech)     params.set('tech', STATE.filters.tech);
+  if (STATE.filters.location) params.set('location', STATE.filters.location);
+  if (STATE.filters.mediums.size === 1) params.set('medium', Array.from(STATE.filters.mediums)[0]);
+
+  const r = await fetch('/api/events?' + params.toString());
+  if (r.status === 401) { STATE.user = null; showAuthShell(); throw new Error('Session expired — please sign in.'); }
+  if (!r.ok) throw new Error(`API HTTP ${r.status}`);
+  const data = await r.json();
+  if (Array.isArray(data.sources)) {
+    console.log('[Dev.Report OS] Sources:', data.sources, '| filters:', data.filters);
+    const failed = data.sources.filter(s => !s.ok);
+    if (failed.length) console.warn('[Dev.Report OS] Failed sources:', failed);
+    // Stash for toast message
+    runScrape._sources = data.sources;
+  }
+  return Array.isArray(data.events) ? data.events : [];
+}
+
+/* ---------- Drawer ---------- */
+function wireDrawer() {
+  $('#drawer-toggle').addEventListener('click', () => {
+    STATE.drawerOpen = !STATE.drawerOpen;
+    $('#drawer').classList.toggle('open', STATE.drawerOpen);
+  });
+  $$('#drawer .drawer-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.action;
+      const messages = {
+        slack: 'YTD report broadcasted to #devrel-leadership',
+        teams: 'YTD report broadcasted to Teams · DevRel channel',
+        csv:   'aggregates.csv prepared for download',
+        pdf:   'Aggregate report PDF generated · downloading…'
+      };
+      const icons = {
+        slack: 'fa-slack', teams: 'fa-microsoft', csv: 'fa-file-csv', pdf: 'fa-file-pdf'
+      };
+      showToast(messages[action] || 'Action complete', 'fa-' + (icons[action] || 'circle-check'));
+    });
+  });
+}
+
+/* ---------- Tabs wiring ---------- */
+function wireTabs() {
+  $$('#tabs .tab').forEach(btn => {
+    btn.addEventListener('click', () => setTab(btn.dataset.tab));
+  });
+}
+
+/* ---------- Add-event modal ---------- */
+function openAddModal() {
+  // Reset form
+  $('#m-name').value = '';
+  $('#m-date').value = new Date().toISOString().split('T')[0];
+  $('#m-location').value = '';
+  $('#m-tech').value = '';
+  $('#m-url').value = '';
+  $('#m-spend').value = '';
+  $('#m-signups').value = '';
+  $('#m-engagements').value = '';
+  $('#m-notes').value = '';
+  $('#modal-error').style.display = 'none';
+  selectSeg('#m-medium', 'Physical');
+  selectSeg('#m-outcome', '');
+  $('#modal-backdrop').classList.add('open');
+  setTimeout(() => $('#m-name').focus(), 50);
+}
+function closeAddModal() {
+  $('#modal-backdrop').classList.remove('open');
+}
+function selectSeg(sel, val) {
+  $$(`${sel} button`).forEach(b => b.classList.toggle('active', b.dataset.v === val));
+}
+function getSeg(sel) {
+  const active = $(`${sel} button.active`);
+  return active ? active.dataset.v : '';
+}
+
+async function submitAddModal() {
+  const name = $('#m-name').value.trim();
+  const date = $('#m-date').value;
+  const err = $('#modal-error');
+  err.style.display = 'none';
+  if (!name) { err.textContent = 'Event name is required.'; err.style.display = 'block'; $('#m-name').focus(); return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { err.textContent = 'Date is required.'; err.style.display = 'block'; $('#m-date').focus(); return; }
+
+  const body = {
+    name,
+    date,
+    location: $('#m-location').value.trim() || 'TBD',
+    technology: $('#m-tech').value,
+    medium: getSeg('#m-medium') || 'Physical',
+    url: $('#m-url').value.trim(),
+    source: 'manual',
+    metrics: {
+      spend: $('#m-spend').value,
+      signups: $('#m-signups').value,
+      engagements: $('#m-engagements').value,
+      outcome: getSeg('#m-outcome') || null,
+      notes: $('#m-notes').value
+    }
+  };
+
+  $('#modal-save').disabled = true;
+  try {
+    const r = await fetch('/api/archive', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+    STATE.past.unshift(data.event);
+    STATE.past.sort((a, b) => b.date.localeCompare(a.date));
+    closeAddModal();
+    if (STATE.tab === 'archive') renderArchive();
+    else if (STATE.tab === 'aggregates') renderAggregates();
+    $('#cnt-archive').textContent = STATE.past.length;
+    showToast(`Logged "${data.event.name}"`, 'fa-circle-check');
+  } catch (e) {
+    err.textContent = 'Save failed: ' + e.message;
+    err.style.display = 'block';
+  } finally {
+    $('#modal-save').disabled = false;
+  }
+}
+
+function wireModal() {
+  $('#modal-close').addEventListener('click', closeAddModal);
+  $('#modal-cancel').addEventListener('click', closeAddModal);
+  $('#modal-backdrop').addEventListener('click', (ev) => {
+    if (ev.target.id === 'modal-backdrop') closeAddModal();
+  });
+  $('#modal-save').addEventListener('click', submitAddModal);
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape' && $('#modal-backdrop').classList.contains('open')) closeAddModal();
+  });
+  // Segmented buttons
+  $$('#m-medium button, #m-outcome button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const group = btn.parentElement.id;
+      selectSeg('#' + group, btn.dataset.v);
+    });
+  });
+}
+
+/* ---------- Auth ---------- */
+let authMode = 'signin';
+
+function setAuthMode(mode) {
+  authMode = mode;
+  $$('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+  $('#auth-name-field').style.display = (mode === 'signup') ? 'block' : 'none';
+  $('#auth-submit').textContent = (mode === 'signup') ? 'Create account' : 'Sign in';
+  $('#auth-password').setAttribute('autocomplete', mode === 'signup' ? 'new-password' : 'current-password');
+  $('#auth-error').classList.remove('show');
+}
+
+function showAuthError(msg) {
+  const el = $('#auth-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function showAuthShell() {
+  $('#auth-shell').classList.add('open');
+  $('#user-menu').style.display = 'none';
+  setAuthMode('signin');
+  setTimeout(() => $('#auth-email').focus(), 50);
+}
+
+function hideAuthShell() {
+  $('#auth-shell').classList.remove('open');
+}
+
+async function attemptAuth(ev) {
+  ev.preventDefault();
+  const email = $('#auth-email').value.trim();
+  const password = $('#auth-password').value;
+  const name = $('#auth-name').value.trim();
+  $('#auth-submit').disabled = true;
+  $('#auth-error').classList.remove('show');
+  try {
+    const endpoint = authMode === 'signup' ? '/api/auth/signup' : '/api/auth/signin';
+    const body = authMode === 'signup' ? { email, name, password } : { email, password };
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Authentication failed.');
+    STATE.user = data.user;
+    hideAuthShell();
+    renderUserMenu();
+    await bootAuthedApp();
+  } catch (err) {
+    showAuthError(err.message);
+  } finally {
+    $('#auth-submit').disabled = false;
+  }
+}
+
+function renderUserMenu() {
+  if (!STATE.user) {
+    $('#user-menu').style.display = 'none';
+    return;
+  }
+  const u = STATE.user;
+  const initials = (u.name || u.email).trim().split(/\s+/).slice(0, 2).map(s => s[0]?.toUpperCase()).join('') || '?';
+  $('#user-avatar').textContent = initials;
+  $('#user-name-label').textContent = u.name || u.email;
+  $('#user-menu-name').textContent = u.name || '—';
+  $('#user-menu-email').textContent = u.email;
+  $('#user-menu').style.display = 'block';
+}
+
+async function signOut() {
+  try { await fetch('/api/auth/signout', { method: 'POST' }); } catch {}
+  STATE.user = null;
+  STATE.past = [];
+  STATE.future = [];
+  $('#cnt-archive').textContent = '0';
+  $('#cnt-pulse').textContent = '0';
+  $('#user-menu-drop').classList.remove('open');
+  showAuthShell();
+}
+
+function wireAuth() {
+  $$('.auth-tab').forEach(t => t.addEventListener('click', () => setAuthMode(t.dataset.mode)));
+  $('#auth-form').addEventListener('submit', attemptAuth);
+  $('#user-menu-btn').addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    $('#user-menu-drop').classList.toggle('open');
+  });
+  document.addEventListener('click', () => $('#user-menu-drop').classList.remove('open'));
+  $('#user-menu-drop').addEventListener('click', (ev) => ev.stopPropagation());
+  $('#signout-btn').addEventListener('click', signOut);
+}
+
+async function bootAuthedApp() {
+  await hydrateArchive();
+  $('#cnt-pulse').textContent = STATE.future.length;
+  setTab(STATE.tab || 'pulse');
+}
+
+/* ---------- Init ---------- */
+async function init() {
+  const stamp = new Date().toISOString().split('T')[0];
+  $('#today-stamp').textContent = stamp;
+  wireTabs();
+  wireFilters();
+  wireScrape();
+  wireDrawer();
+  wireModal();
+  wireAuth();
+
+  // Check existing session
+  try {
+    const r = await fetch('/api/auth/me');
+    const data = await r.json();
+    if (data.user) {
+      STATE.user = data.user;
+      renderUserMenu();
+      await bootAuthedApp();
+    } else {
+      showAuthShell();
+    }
+  } catch (err) {
+    console.error('[init] auth check failed:', err);
+    showAuthShell();
+  }
+}
+
+init();
+</script>
+</body>
+</html>

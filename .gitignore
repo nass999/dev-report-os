@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Persistence — NEVER commit. Contains bcrypt password hashes (users.json),
+# live session tokens (sessions/), and the archive ledger (archive.json).
+data/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts (none today; defensive)
+dist/
+build/

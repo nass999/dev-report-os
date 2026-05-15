@@ -1,0 +1,20 @@
+{
+  "name": "dev-report-os",
+  "version": "1.0.0",
+  "description": "System of Record for DevRel — Discovery, Execution, Reporting",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^4.19.2",
+    "express-session": "^1.19.0",
+    "session-file-store": "^1.5.0"
+  }
+}
