@@ -187,6 +187,61 @@ app.delete('/api/archive/:id', async (req, res) => {
   }
 });
 
+/* ---------- Broadcast to Slack / Teams ----------
+ * Slack incoming webhooks block CORS from browsers; Teams enforces strict
+ * Origin checks. Both work fine when called server-to-server, so the client
+ * POSTs here and we forward. Webhook host is whitelisted to avoid using
+ * this route as an open SSRF gadget.
+ */
+const BROADCAST_HOSTS = new Set([
+  'hooks.slack.com',
+  'webhook.office.com',
+  'outlook.office.com',
+  'prod-NN.westus.logic.azure.com',  // Teams workflow webhooks vary by region;
+                                       // covered by the .azure.com suffix check below
+]);
+function isAllowedWebhookHost(url) {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:') return false;
+    if (BROADCAST_HOSTS.has(u.host)) return true;
+    // Teams Workflow webhook hosts are regional (e.g. prod-23.westus.logic.azure.com).
+    if (u.host.endsWith('.logic.azure.com') && u.host.startsWith('prod-')) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+app.post('/api/broadcast', async (req, res) => {
+  try {
+    const { platform, webhookUrl, payload } = req.body || {};
+    if (!['slack', 'teams'].includes(platform)) {
+      return res.status(400).json({ error: 'platform must be slack or teams' });
+    }
+    if (!webhookUrl || !isAllowedWebhookHost(webhookUrl)) {
+      return res.status(400).json({ error: 'webhookUrl must be an https Slack or Teams webhook' });
+    }
+    if (!payload || typeof payload !== 'object') {
+      return res.status(400).json({ error: 'payload must be an object' });
+    }
+    const upstream = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const text = await upstream.text();
+    if (!upstream.ok) {
+      console.error('[broadcast]', platform, upstream.status, text.slice(0, 200));
+      return res.status(502).json({ error: `${platform} webhook responded ${upstream.status}`, detail: text.slice(0, 200) });
+    }
+    res.json({ ok: true, platform });
+  } catch (err) {
+    console.error('[broadcast] fatal:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 app.listen(PORT, () => {

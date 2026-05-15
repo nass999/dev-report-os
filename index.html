@@ -927,6 +927,43 @@
   .muted { color: var(--text-muted); }
   .soft { color: var(--text-soft); }
   .nowrap { white-space: nowrap; }
+
+  /* ---------- Print: clean PDF output for the "Download PDF Report" action ---------- */
+  @media print {
+    /* Hide every interactive / overlay chrome — leaves the report body. */
+    .topbar,
+    .drawer,
+    .drawer-backdrop,
+    .modal-backdrop,
+    .toast,
+    #tabs,
+    .tabs,
+    nav,
+    [data-print-hide],
+    button:not(.print-keep) {
+      display: none !important;
+    }
+    html, body {
+      background: #fff !important;
+      color: #111 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    body * {
+      box-shadow: none !important;
+    }
+    /* Cards and big stat blocks render with a clean light look. */
+    .card, .cards-row .card, .surface, .panel, .section {
+      background: #fff !important;
+      border: 1px solid #d1d5db !important;
+      color: #111 !important;
+      page-break-inside: avoid;
+    }
+    a, a:visited { color: #1d4ed8; text-decoration: none; }
+    h1, h2, h3 { color: #111; }
+    /* Page margins for the printed PDF */
+    @page { margin: 14mm 12mm; }
+  }
 </style>
 </head>
 <body>
@@ -1936,20 +1973,199 @@ function wireDrawer() {
     $('#drawer').classList.toggle('open', STATE.drawerOpen);
   });
   $$('#drawer .drawer-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const action = btn.dataset.action;
-      const messages = {
-        slack: 'YTD report broadcasted to #devrel-leadership',
-        teams: 'YTD report broadcasted to Teams · DevRel channel',
-        csv:   'aggregates.csv prepared for download',
-        pdf:   'Aggregate report PDF generated · downloading…'
-      };
-      const icons = {
-        slack: 'fa-slack', teams: 'fa-microsoft', csv: 'fa-file-csv', pdf: 'fa-file-pdf'
-      };
-      showToast(messages[action] || 'Action complete', 'fa-' + (icons[action] || 'circle-check'));
+      try {
+        if (action === 'csv')   return exportCsv();
+        if (action === 'pdf')   return exportPdf();
+        if (action === 'slack') return broadcast('slack');
+        if (action === 'teams') return broadcast('teams');
+      } catch (err) {
+        console.error('[drawer]', action, err);
+        showToast(err.message || 'Action failed', 'fa-circle-exclamation');
+      }
     });
   });
+}
+
+/* ---------- Real CSV export ---------- */
+function exportCsv() {
+  const agg = computeAggregates();
+  const past = STATE.past || [];
+  if (past.length === 0) {
+    showToast('No archived events to export yet', 'fa-circle-exclamation');
+    return;
+  }
+
+  // Aggregate summary as a header block, then per-event rows.
+  const escape = (v) => {
+    if (v == null) return '';
+    const s = String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [];
+  lines.push('Dev.Report OS — YTD Aggregate Report');
+  lines.push(`Generated,${new Date().toISOString()}`);
+  lines.push('');
+  lines.push('Metric,Value');
+  lines.push(`YTD Total Spend,${agg.totalSpend}`);
+  lines.push(`YTD Total Signups,${agg.totalSignups}`);
+  lines.push(`YTD Engagements,${agg.totalEngagements}`);
+  lines.push(`Cost per Signup,${agg.cps.toFixed(2)}`);
+  lines.push(`Events YTD,${agg.eventsYTD}`);
+  lines.push('');
+  lines.push('Event,Date,Platform,URL,Location,Medium,Spend,Signups,Engagements,Outcome,Notes');
+  past
+    .slice()
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .forEach(e => {
+      const m = e.metrics || {};
+      lines.push([
+        e.name, e.date, e.platform, e.url, e.location, e.medium,
+        m.spend ?? '', m.signups ?? '', m.engagements ?? '',
+        m.outcome ?? '', e.notes ?? '',
+      ].map(escape).join(','));
+    });
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `dev-report-os-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`${past.length} events exported as CSV`, 'fa-file-csv');
+}
+
+/* ---------- Real PDF via window.print() ----------
+ * Cleanest approach for a static SPA: trigger the browser's print dialog,
+ * which on every modern browser includes "Save as PDF" as a destination.
+ * A @media print stylesheet in <head> strips the chrome (drawer, modal,
+ * toasts) and styles the page like a report.
+ */
+function exportPdf() {
+  if (!STATE.past || STATE.past.length === 0) {
+    showToast('No archived events to report yet', 'fa-circle-exclamation');
+    return;
+  }
+  // Close the drawer so it doesn't capture click-through during print prep.
+  STATE.drawerOpen = false;
+  $('#drawer')?.classList.remove('open');
+  // Defer one tick so the drawer-close paints before the print dialog opens.
+  setTimeout(() => {
+    window.print();
+  }, 80);
+}
+
+/* ---------- Real Slack / Teams broadcast ----------
+ * Posts an aggregate summary to an incoming webhook via /api/broadcast.
+ * Webhook URL is prompted on first use and persisted to localStorage.
+ */
+async function broadcast(platform) {
+  const past = STATE.past || [];
+  if (past.length === 0) {
+    showToast('No archived events to broadcast yet', 'fa-circle-exclamation');
+    return;
+  }
+
+  const storageKey = `devreport.webhook.${platform}`;
+  let webhookUrl = localStorage.getItem(storageKey);
+
+  if (!webhookUrl) {
+    const example = platform === 'slack'
+      ? 'https://hooks.slack.com/services/T000/B000/XXX'
+      : 'https://prod-23.westus.logic.azure.com/workflows/...';
+    const input = prompt(
+      `Paste your ${platform === 'slack' ? 'Slack' : 'Microsoft Teams'} incoming-webhook URL.\n` +
+      `It will be saved to this browser's localStorage.\n\nExample: ${example}`,
+      ''
+    );
+    if (!input) return;
+    webhookUrl = input.trim();
+    localStorage.setItem(storageKey, webhookUrl);
+  }
+
+  const agg = computeAggregates();
+  const payload = platform === 'slack'
+    ? buildSlackPayload(agg, past)
+    : buildTeamsPayload(agg, past);
+
+  showToast(`Broadcasting to ${platform === 'slack' ? 'Slack' : 'Teams'}…`, 'fa-paper-plane');
+
+  const res = await fetch('/api/broadcast', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ platform, webhookUrl, payload }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    // Clear the stored URL on auth/format errors so the user can re-enter.
+    if (res.status === 400 || res.status === 401) localStorage.removeItem(storageKey);
+    throw new Error(data.error || `Broadcast failed (${res.status})`);
+  }
+  showToast(
+    `YTD report broadcasted to ${platform === 'slack' ? 'Slack' : 'Teams'}`,
+    platform === 'slack' ? 'fa-slack' : 'fa-microsoft'
+  );
+}
+
+function buildSlackPayload(agg, past) {
+  const recent = past
+    .slice()
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .slice(0, 5)
+    .map(e => `• \`${e.date}\` ${e.name} — *${e.metrics?.signups ?? 0}* signups, *$${fmtMoney(e.metrics?.spend || 0)}* spend`)
+    .join('\n');
+  return {
+    blocks: [
+      { type: 'header', text: { type: 'plain_text', text: '📊 Dev.Report OS — YTD Snapshot' } },
+      {
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `*YTD Spend*\n$${fmtMoney(agg.totalSpend)}` },
+          { type: 'mrkdwn', text: `*YTD Signups*\n${fmtMoney(agg.totalSignups)}` },
+          { type: 'mrkdwn', text: `*Engagements*\n${fmtMoney(agg.totalEngagements)}` },
+          { type: 'mrkdwn', text: `*Cost / Signup*\n$${agg.cps.toFixed(2)}` },
+          { type: 'mrkdwn', text: `*Events YTD*\n${agg.eventsYTD}` },
+        ],
+      },
+      { type: 'section', text: { type: 'mrkdwn', text: `*Latest events*\n${recent || '_none_'}` } },
+      { type: 'context', elements: [{ type: 'mrkdwn', text: `Sent from Dev.Report OS · ${new Date().toLocaleString()}` }] },
+    ],
+  };
+}
+
+function buildTeamsPayload(agg, past) {
+  const recent = past
+    .slice()
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .slice(0, 5);
+  return {
+    '@type': 'MessageCard',
+    '@context': 'https://schema.org/extensions',
+    themeColor: '0078D4',
+    summary: 'Dev.Report OS — YTD Snapshot',
+    title: 'Dev.Report OS — YTD Snapshot',
+    sections: [
+      {
+        facts: [
+          { name: 'YTD Spend',     value: `$${fmtMoney(agg.totalSpend)}` },
+          { name: 'YTD Signups',   value: fmtMoney(agg.totalSignups) },
+          { name: 'Engagements',   value: fmtMoney(agg.totalEngagements) },
+          { name: 'Cost / Signup', value: `$${agg.cps.toFixed(2)}` },
+          { name: 'Events YTD',    value: String(agg.eventsYTD) },
+        ],
+      },
+      {
+        title: 'Latest events',
+        facts: recent.map(e => ({
+          name: `${e.date} · ${e.name}`,
+          value: `${e.metrics?.signups ?? 0} signups · $${fmtMoney(e.metrics?.spend || 0)}`,
+        })),
+      },
+      { text: `Sent from Dev.Report OS · ${new Date().toLocaleString()}` },
+    ],
+  };
 }
 
 /* ---------- Tabs wiring ---------- */
