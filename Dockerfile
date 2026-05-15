@@ -8,6 +8,7 @@ COPY . .
 FROM node:20-alpine
 WORKDIR /app
 COPY --from=build /app .
+RUN mkdir -p /app/data /app/sessions && chown -R 1001:1001 /app/data /app/sessions
 ENV NODE_ENV=production
 EXPOSE 5174
 USER 1001
