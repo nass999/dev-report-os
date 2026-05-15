@@ -1,0 +1,11 @@
+# .opsera/dev-report-os-36cc/config.yaml — written by Opsera Vibe-Shift. Safe to commit (no secrets).
+app:
+  name: dev-report-os-36cc
+  port: 5174
+  framework: node
+  dockerfilePath: Dockerfile
+environments:
+  dev:
+    cluster: opsera-usw2-np
+    region: us-west-2
+    ingressDomain: agent.opsera.dev
